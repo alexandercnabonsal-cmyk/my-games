@@ -23,27 +23,6 @@
       overflow: hidden;
     }
 
-    /* Flame decorations */
-    body::before {
-      content: '🔥';
-      font-size: 120px;
-      position: fixed;
-      top: -20px;
-      left: -20px;
-      opacity: 0.15;
-      pointer-events: none;
-    }
-    body::after {
-      content: '🔥';
-      font-size: 120px;
-      position: fixed;
-      bottom: -20px;
-      right: -20px;
-      opacity: 0.15;
-      pointer-events: none;
-      transform: scaleX(-1);
-    }
-
     h1 {
       font-family: 'Orbitron', sans-serif;
       font-size: 2.2rem;
@@ -85,7 +64,8 @@
       box-shadow: 0 0 14px #ff6600aa;
     }
 
-    .car-icon { font-size: 1.6rem; }
+    .car-icon { display: flex; align-items: center; }
+    .car-icon img { width: 90px; height: auto; object-fit: contain; }
 
     /* Status */
     #status {
@@ -117,10 +97,16 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 3.5rem;
       cursor: pointer;
       transition: background 0.15s, transform 0.1s;
       user-select: none;
+    }
+
+    .cell img {
+      width: 96px;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
     }
 
     .cell:hover:not(.taken) {
@@ -158,9 +144,14 @@
       text-transform: uppercase;
       box-shadow: 0 4px 16px #ff660066;
       transition: opacity 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     button:hover { opacity: 0.85; transform: scale(1.04); }
+
+    button img { width: 44px; height: auto; }
 
     /* Score */
     #score {
@@ -170,7 +161,16 @@
       font-size: 0.9rem;
       color: #aaa;
       letter-spacing: 1px;
+      align-items: center;
     }
+
+    #score .score-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #score .score-item img { width: 56px; height: auto; }
 
     #score span { color: #ff6600; font-size: 1.1rem; }
   </style>
@@ -182,11 +182,11 @@
 
 <div id="players">
   <div class="player-card active" id="card-1">
-    <span class="car-icon">🏎️</span>
+    <span class="car-icon" id="icon-p1"></span>
     <span>Player 1</span>
   </div>
   <div class="player-card" id="card-2">
-    <span class="car-icon">🚗</span>
+    <span class="car-icon" id="icon-p2"></span>
     <span>Player 2</span>
   </div>
 </div>
@@ -196,18 +196,38 @@
 <div id="board"></div>
 
 <div id="controls">
-  <button id="restart-btn">🏁 New Race</button>
+  <button id="restart-btn">
+    <img src="porsche-993.png" style="width:44px;height:auto;">
+    New Race
+  </button>
 </div>
 
 <div id="score">
-  <div>🏎️ P1 Wins: <span id="s1">0</span></div>
-  <div>🚗 P2 Wins: <span id="s2">0</span></div>
-  <div>🤝 Draws: <span id="sd">0</span></div>
+  <div class="score-item" id="score-p1-label"></div>
+  <div class="score-item" id="score-p2-label"></div>
+  <div class="score-item">Draws: <span id="sd">0</span></div>
 </div>
 
 <script>
-  // Player 1 = 🏎️  (race car), Player 2 = 🚗 (car)
-  const ICONS = ['', '🏎️', '🚗'];
+  // Player 1 = Porsche 993 (red Hot Wheels), Player 2 = McLaren F1 (orange)
+  function carImg(src, flip, size) {
+    const w = size || 90;
+    const style = flip ? `width:${w}px;transform:scaleX(-1)` : `width:${w}px`;
+    return `<img src="${src}" style="${style}" alt="">`;
+  }
+
+  const PORSCHE_SRC = 'porsche-993.png';
+  const MCLAREN_SRC = 'mclaren-f1.png';
+
+  // Populate player card icons
+  document.getElementById('icon-p1').innerHTML = carImg(PORSCHE_SRC, false, 90);
+  document.getElementById('icon-p2').innerHTML = carImg(MCLAREN_SRC, true, 90);
+
+  // Populate score labels
+  document.getElementById('score-p1-label').innerHTML = carImg(PORSCHE_SRC, false, 56) + ' P1: <span id="s1">0</span>';
+  document.getElementById('score-p2-label').innerHTML = carImg(MCLAREN_SRC, true, 56) + ' P2: <span id="s2">0</span>';
+
+  const CAR_HTML = ['', carImg(PORSCHE_SRC, false, 96), carImg(MCLAREN_SRC, true, 96)];
   const MSGS_TURN = ['', "Player 1's turn — FLOOR IT!", "Player 2's turn — PUNCH IT!"];
   const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
@@ -228,7 +248,7 @@
     board.forEach((val, i) => {
       const cell = document.createElement('div');
       cell.className = 'cell' + (val ? ' taken' : '');
-      cell.textContent = ICONS[val] || '';
+      if (val) cell.innerHTML = CAR_HTML[val];
       cell.addEventListener('click', () => move(i));
       el.appendChild(cell);
     });
@@ -243,8 +263,8 @@
     if (win) {
       over = true;
       win.forEach(idx => document.querySelectorAll('.cell')[idx].classList.add('win'));
-      const name = current === 1 ? 'Player 1 🏎️' : 'Player 2 🚗';
-      setStatus(`${name} WINS! CHECKERED FLAG! 🏁`);
+      const name = current === 1 ? 'Player 1' : 'Player 2';
+      setStatus(`${name} WINS! CHECKERED FLAG!`);
       score[current - 1]++;
       updateScore();
       return;
@@ -252,7 +272,7 @@
 
     if (board.every(v => v)) {
       over = true;
-      setStatus("DEAD HEAT! It's a draw! 🤝");
+      setStatus("DEAD HEAT! It's a draw!");
       score[2]++;
       updateScore();
       return;
