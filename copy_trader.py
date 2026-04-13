@@ -23,7 +23,6 @@ import math
 from datetime import datetime, timezone
 from typing import Optional, Union
 from collections import Counter
-from token_refresh import refresh_token_if_needed
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 TOP_TRADERS_COUNT    = 10      # #6: track top 10 traders
@@ -537,10 +536,7 @@ def main():
                 time.sleep(POLL_INTERVAL_SEC)
                 continue
 
-        # ── 2. Auto-refresh token if expiring ────────────────────────────────
-        refresh_token_if_needed()
-
-        # ── 3. Check balance ──────────────────────────────────────────────────
+        # ── 2. Check balance ──────────────────────────────────────────────────
         balance = get_balance()
         log.info("Balance: $%.2f  |  Buys: %d  Sells: %d", balance, buys_executed, sells_executed)
 
@@ -554,10 +550,10 @@ def main():
             time.sleep(300)
             continue
 
-        # ── 4. Auto-redeem resolved winning positions ─────────────────────────
+        # ── 3. Auto-redeem resolved winning positions ─────────────────────────
         auto_redeem()
 
-        # ── 5. Collect fresh trades ───────────────────────────────────────────
+        # ── 4. Collect fresh trades ───────────────────────────────────────────
         my_positions = get_my_positions()
         consensus_buys: Counter = Counter()
         fresh_buys:  list = []
