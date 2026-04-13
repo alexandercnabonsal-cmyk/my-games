@@ -15,6 +15,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
+from typing import Optional
 
 CREDS_FILE   = os.path.expanduser("~/.bullpen/credentials.json")
 USERGATE_URL = "https://usergate.bullpen.fi"
@@ -67,7 +68,7 @@ def _post(url: str, headers: dict, body: bytes) -> tuple:
         return 0, str(ex)
 
 
-def _try_cookie(base_url: str, path: str, cookie_name: str, token: str) -> dict | None:
+def _try_cookie(base_url: str, path: str, cookie_name: str, token: str) -> Optional[dict]:
     """Try sending the refresh token as an HTTP cookie.  Returns new tokens or None."""
     url     = base_url.rstrip("/") + path
     headers = {
@@ -85,7 +86,7 @@ def _try_cookie(base_url: str, path: str, cookie_name: str, token: str) -> dict 
     return None
 
 
-def _try_bearer(base_url: str, path: str, token: str) -> dict | None:
+def _try_bearer(base_url: str, path: str, token: str) -> Optional[dict]:
     """Try sending the refresh token as Bearer auth in the header."""
     url     = base_url.rstrip("/") + path
     headers = {
@@ -103,7 +104,7 @@ def _try_bearer(base_url: str, path: str, token: str) -> dict | None:
     return None
 
 
-def _try_body(base_url: str, path: str, token: str) -> dict | None:
+def _try_body(base_url: str, path: str, token: str) -> Optional[dict]:
     """Try sending the refresh token in the JSON body."""
     url     = base_url.rstrip("/") + path
     payload = json.dumps({"refresh_token": token, "refreshToken": token}).encode()
